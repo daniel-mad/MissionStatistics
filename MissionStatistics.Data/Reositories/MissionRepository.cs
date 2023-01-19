@@ -37,19 +37,9 @@ namespace MissionStatistics.Data.Reositories
 
         public async Task<(string?, int?)> GetMostIsolatedCountry()
         {
-            //var isolatedAgentsQuery = _context.Missions.GroupBy(m => m.Agent).Where(g => g.Count() == 1).Select(g => g.Key);
-            //var isolatedAgentsByCountryQuery = _context.Missions.GroupBy(m => m.Country).Select(g =>
-            //new
-            //{
-            //    Name = g.Key,
-            //    IsolatedAgents = g.Select(g => g.Agent).Where(a => isolatedAgentsQuery.Contains(a)).Count(),
-                
-            //});
-
-            //var country = await isolatedAgentsByCountryQuery.SingleOrDefaultAsync(q => q.IsolatedAgents == isolatedAgentsByCountryQuery.Max(i => i.IsolatedAgents));
 
             var country = await _context.MaxIsolatedAgentsCountry.SingleOrDefaultAsync();
-   
+
             return (country?.Name, country?.IsolatedAgentsCount);
 
         }

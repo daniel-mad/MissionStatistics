@@ -21,7 +21,7 @@ namespace MissionStatistics.API.Controllers
         [HttpGet]
         public async Task<ActionResult<List<MissionDto>>> GetAllMissions()
         {
-            var missions =  await _service.GetAllMissions();
+            var missions = await _service.GetAllMissions();
             return Ok(missions);
         }
 
@@ -29,7 +29,7 @@ namespace MissionStatistics.API.Controllers
         public async Task<ActionResult<MissionDto>> GetMission(int id)
         {
             var mission = await _service.GetMission(id);
-            if(mission == null)
+            if (mission == null)
             {
                 return NotFound();
             }
@@ -41,7 +41,7 @@ namespace MissionStatistics.API.Controllers
         public async Task<IActionResult> GetMostIsolatedCountry()
         {
             var (country, isolatedAgents) = await _service.GetMostIsolatedCountry();
-            if(string.IsNullOrEmpty(country) || isolatedAgents == null)
+            if (string.IsNullOrEmpty(country) || isolatedAgents == null)
             {
                 return NotFound();
             }
@@ -58,7 +58,7 @@ namespace MissionStatistics.API.Controllers
         public async Task<ActionResult<MissionDto?>> FindCloset(Location location)
         {
             var closetMission = await _service.GetClosetMission(location);
-            if(closetMission == null)
+            if (closetMission == null)
             {
                 return NotFound();
             }
@@ -71,25 +71,12 @@ namespace MissionStatistics.API.Controllers
         public async Task<ActionResult<MissionDto>> AddMission(CreateMissionDto missionDto)
         {
             var mission = await _service.AddMission(missionDto);
-            return CreatedAtRoute(nameof(GetMission), new {id = mission.Id}, mission);
+            return CreatedAtRoute(nameof(GetMission), new { id = mission.Id }, mission);
 
         }
 
 
 
-        
-        //[HttpGet(nameof(GetGeocoding))]
-        //public async Task<IActionResult> GetGeocoding(Location address)
-        //{
-        //    var result = await _geocodingService.GetGeocodingAsync(address);
-        //    if(result == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    return Ok(result);
-
-        //}
 
 
 

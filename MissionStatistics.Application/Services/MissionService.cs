@@ -27,7 +27,15 @@ namespace MissionStatistics.Application.Services
 
         public async Task<MissionDto> AddMission(CreateMissionDto mission)
         {
+
             var missionDb = _mapper.Map<Mission>(mission);
+            if (mission.Address != null)
+            {
+                var geoDto = await _geocodingService.GetGeocodingAsync(new Location { TargetLocation = mission.Address });
+                missionDb.Lat = geoDto.Latitude;
+                missionDb.Lon = geoDto.Longitude;
+
+            }
             await _repository.AddMissionAsync(missionDb);
             return _mapper.Map<MissionDto>(missionDb);
         }
@@ -58,15 +66,11 @@ namespace MissionStatistics.Application.Services
             int maxDistance = int.MaxValue;
             foreach (var mission in missions)
             {
-                if (mission.Address.Split(',', StringSplitOptions.RemoveEmptyEntries).Length < 2)
+                if (mission.Lat is null || mission.Lon is null)
                 {
                     continue;
                 }
-                var coordinate = await _geocodingService.GetMissionGeocodingAsync(mission);
-                if (coordinate == null)
-                {
-                    continue;
-                }
+                var coordinate = new Geocoding((double)mission.Lat, (double)mission.Lon);
 
 
                 mission.location = coordinate;

@@ -18,6 +18,8 @@ namespace MissionStatistics.Domain
         [StringLength(150)]
         public string Address { get; set; } = null!;
         public DateTime Date { get; set; }
+        public double? Lat { get; set; }
+        public double? Lon { get; set; }
 
     }
 }

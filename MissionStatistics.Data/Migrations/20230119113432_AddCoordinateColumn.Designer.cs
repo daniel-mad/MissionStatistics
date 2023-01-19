@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MissionStatistics.Data.DbContexts;
 
@@ -10,9 +11,10 @@ using MissionStatistics.Data.DbContexts;
 namespace MissionStatistics.Data.Migrations
 {
     [DbContext(typeof(MissionStatisticsDbContext))]
-    partial class MissionStatisticsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230119113432_AddCoordinateColumn")]
+    partial class AddCoordinateColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.10");
