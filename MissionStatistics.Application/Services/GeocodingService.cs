@@ -1,22 +1,26 @@
 ﻿using Microsoft.Extensions.Configuration;
 using MissionStatistics.Application.Models;
+using MissionStatistics.Domain.Exceptions;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Json;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static MissionStatistics.Application.Models.GeoApiResponse;
 
 namespace MissionStatistics.Application.Services
 {
     public class GeocodingService : IGeocodingService
     {
-        
+
         private readonly string _apiKey;
         private readonly string _url;
         private readonly Dictionary<int, Geocoding> _missionsCoordinates = new();
         public HttpClient client { get; set; } = new HttpClient();
-        
+
         public GeocodingService(IConfiguration configuration)
         {
             _apiKey = configuration["GeocodingApiSettings:ApiKey"];
@@ -27,75 +31,56 @@ namespace MissionStatistics.Application.Services
         public async Task<Geocoding?> GetGeocodingAsync(Location location)
         {
             // Check if Address or Coordinate
-            if (location.TargetLocation.Split(',').Length != 2)
-                return await GetCoordinateByAddress(location.TargetLocation);
-
-            return await GetCoordinateByCoordinate(location.TargetLocation);
+            var coordinateRegexPattern = @"^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$";
+            var rgx = new Regex(coordinateRegexPattern);
+            if (rgx.IsMatch(location.TargetLocation))
+            {
+                return await GetCoordinateByCoordinate(location.TargetLocation);
+            }
+            var city = location.TargetLocation.Split(',', StringSplitOptions.RemoveEmptyEntries)[1];
+            return await GetCoordinateByAddress(city);
 
         }
 
         private async Task<Geocoding?> GetCoordinateByCoordinate(string targetLocation)
         {
-            var url = $"{_url}reverse?access_key={_apiKey}&query={targetLocation}";
-            if (!ValidateCoordinate(targetLocation))
-            {
-                return null;
-            }
+            var coordinate = targetLocation.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var lat = coordinate[0].Trim();
+            var lon = coordinate[1].Trim();
+            var url = $"{_url}reverse?lat={lat}&lon={lon}&limit=1&appid={_apiKey}";
+
             return await GetCoordinate(url);
-            
+
 
         }
 
-        private bool ValidateCoordinate(string targetLocation)
-        {
-            var coordinates = targetLocation.Split(',');
-            foreach (var c in coordinates)
-            {
-                if (!Double.TryParse(c, out double _))
-                    return false;
-            }
-
-            return true;
-        }
 
         private async Task<Geocoding?> GetCoordinateByAddress(string targetLocation)
         {
-            var url = $"{_url}forward?access_key={_apiKey}&query={targetLocation}";
+            var url = $"{_url}direct?q={targetLocation}&limit=1&appid={_apiKey}";
             return await GetCoordinate(url);
         }
 
         private async Task<Geocoding?> GetCoordinate(string url)
         {
-            
-            var response = await client.GetAsync(url);
-            if (response.IsSuccessStatusCode)
+            try
             {
-                //var json = await response.Content.ReadAsAsync<GeoResponse>();
-                
-                var json =  response.Content.ReadAsStringAsync().Result;
-                if (string.IsNullOrEmpty(json))
-                {
-                    return null;
-                }
-                try
-                {
-                    var data = JsonConvert.DeserializeObject<GeoResponse>(json)!;
-                    
-                   
-                    var geo = data?.Data?[0]!;
-                   
-                    var geocoding = new Geocoding(geo.Latitude, geo.Longitude);
-                    return geocoding;
+                var response = await client.GetFromJsonAsync<IEnumerable<GeoDto>>(url);
 
-                }
-                catch 
+                if (response is null || response.Count() == 0)
                 {
-
-                    return null;
+                    throw new NotFoundException("Location not found.");
                 }
-                
+                var geo = response.First();
+                var geocoding = new Geocoding(geo.Lat, geo.Lon);
+                return geocoding;
             }
-            throw new Exception(response.ReasonPhrase);
+            catch
+            {
+
+                throw;
+            }
+
         }
 
         public async Task<Geocoding?> GetMissionGeocodingAsync(MissionDto mission)
@@ -105,7 +90,7 @@ namespace MissionStatistics.Application.Services
             {
                 var missionLocation = new Location
                 {
-                    TargetLocation = mission.Address.Split(',')[0]
+                    TargetLocation = mission.Address
                 };
                 coordinate = await GetGeocodingAsync(missionLocation);
 

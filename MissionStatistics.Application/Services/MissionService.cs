@@ -15,14 +15,14 @@ namespace MissionStatistics.Application.Services
         private readonly IMissionRepository _repository;
         private readonly IMapper _mapper;
         private readonly IGeocodingService _geocodingService;
-       
+
 
         public MissionService(IMissionRepository repository, IMapper mapper, IGeocodingService geocodingService)
         {
             _repository = repository;
             _mapper = mapper;
             _geocodingService = geocodingService;
-           
+
         }
 
         public async Task<MissionDto> AddMission(CreateMissionDto mission)
@@ -41,7 +41,7 @@ namespace MissionStatistics.Application.Services
         public async Task<MissionDto?> GetClosetMission(Location location)
         {
             var geoCoding = await _geocodingService.GetGeocodingAsync(location);
-            if(geoCoding == null)
+            if (geoCoding == null)
             {
                 return null;
             }
@@ -56,20 +56,23 @@ namespace MissionStatistics.Application.Services
         {
             MissionDto closet = missions[0];
             int maxDistance = int.MaxValue;
-            foreach(var mission in missions)
+            foreach (var mission in missions)
             {
-
-                var coordinate = await _geocodingService.GetMissionGeocodingAsync(mission);
-                if(coordinate == null)
+                if (mission.Address.Split(',', StringSplitOptions.RemoveEmptyEntries).Length < 2)
                 {
                     continue;
                 }
-                
-                
+                var coordinate = await _geocodingService.GetMissionGeocodingAsync(mission);
+                if (coordinate == null)
+                {
+                    continue;
+                }
+
+
                 mission.location = coordinate;
 
                 int distance = GetDistance(coordinate!, geoCoding!);
-                if(distance < maxDistance)
+                if (distance < maxDistance)
                 {
                     maxDistance = distance;
                     closet = mission;
@@ -81,11 +84,11 @@ namespace MissionStatistics.Application.Services
 
         private int GetDistance(Geocoding coordinate, Geocoding geoCoding)
         {
-           var x = Math.Pow((geoCoding.Latitude - coordinate.Latitude), 2);
-           var y = Math.Pow((geoCoding.Longitude - coordinate.Longitude), 2);
-           var distance =  Math.Sqrt(x + y);
+            var x = Math.Pow((geoCoding.Latitude - coordinate.Latitude), 2);
+            var y = Math.Pow((geoCoding.Longitude - coordinate.Longitude), 2);
+            var distance = Math.Sqrt(x + y);
 
-           return (int)distance;
+            return (int)distance;
         }
 
         public async Task<MissionDto> GetMission(int id)
